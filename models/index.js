@@ -1,3 +1,8 @@
+var Sequelize = require('sequelize');
+var db = new Sequelize('postgres://localhost:5432/wikistack', {
+    logging: false
+});
+
 var Page = db.define('page', {
     title: {
         type: Sequelize.STRING
@@ -24,5 +29,6 @@ var User = db.define('user', {
 
 module.exports = {
   Page: Page,
-  User: User
+  User: User,
+  db: db
 }; 

@@ -6,6 +6,7 @@ var router = require('./routes');
 var fs = require('fs');
 var bodyParser = require('body-parser');
 var nunjucks = require('nunjucks');
+var models = require("./models/index.js");
 
 // point nunjucks to the directory containing templates and turn off caching; configure returns an Environment 
 // instance, which we'll want to use to add Markdown support later.
@@ -24,6 +25,10 @@ app.use(express.static('./public'));
 
 //app.use('/', router);
 
-var server = app.listen(1337, function(){
-    console.log('listening on port 1337');
-});
+models.db.sync({})
+.then(function () {
+    app.listen(3000, function (){
+        (console.log("listening on port 3000"))
+    });
+})
+.catch(console.error);
