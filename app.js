@@ -32,4 +32,3 @@ models.db.sync({})
     });
 })
 .catch(console.error);
-

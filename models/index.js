@@ -42,6 +42,7 @@ Page.hook('beforeValidate', (page) => {
 });
 
 
+
 var User = db.define('user', {
     name: {
         type: Sequelize.STRING,
