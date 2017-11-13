@@ -1,12 +1,15 @@
+
 {% extends "layout.html" %}
 
 {% block content %}
-  <h3>{{userinfo.name}}</h3>
-  <h4>{{userinfo.email}}</h4>
-  <hr>
-  <ul>
-    {% for page in userpages %}
-        <li><a href="{{page.route}}">{{page.title}}</a></li>
+<h3>{{ user.name }}'s Pages</h3>
+<hr>
+<ul class="list-unstyled">
+    <!-- PLACEHOLDER LIST OF PAGES -->
+    {% for page in user.pages %}
+    <li>
+        <a href="{{ page.route }}">{{ page.title }}</a>
+    </li>
     {% endfor %}
-    </ul>
+</ul>
 {% endblock %}

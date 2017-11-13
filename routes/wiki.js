@@ -1,71 +1,187 @@
-'use strict';
 var express = require('express');
 var router = express.Router();
 var models = require('../models');
 var Page = models.Page;
 var User = models.User;
+module.exports = router;
 
-router.get('/', function(req, res, next){
-    res.redirect("/");
-})
 
-router.get('/add/', function(req, res, next){
-    res.render("addpage");
-})
-
-router.get('/:urlTitle', function(req, res, next){
-
-    var page = Page.findOne({
-        where: {
-            urlTitle : req.params.urlTitle
-        }
-    });
-    var user = page.getAuthor();
-
-    Promise.all([page, user]).then(function(values) {
-        res.render('wikipage', {
-           foundPage: values[0],
-           author: values[1]
+// GET /wiki
+router.get('/', function (req, res, next) {
+    Page.findAll({})
+        .then(function (pages) {
+            res.render('index', {
+                pages: pages
+            });
         })
-    })
-    .catch(next);
-} )
+        .catch(next);
+});
 
-router.post('/', function(req, res, next){
-    // first we need to get the author name from user input
-    // next, we need to see if the author already exists
-    // then, if does not exist, create new user in table
-    // if does exist, add to existing wiki entries
+
+// POST /wiki
+router.post('/', function (req, res, next) {
+
     User.findOrCreate({
         where: {
-            name: req.body.authorName,
-            email: req.body.authorEmail
+            email: req.body.authorEmail,
+            name: req.body.authorName
         }
-
-    }).then(function(values) {
-        let user = values[0];
-
-        let page = Page.build({
-            title: req.body.title,
-            content: req.body.content
-          });
-
-        return page.save()
-        .then(function(page) {
-            return page.setAuthor(user);
-          });
+    })
+        .spread(function (user, wasCreatedBool) {
+            return Page.create({
+                title: req.body.title,
+                content: req.body.content,
+                status: req.body.status,
+                tags: req.body.tags
+            }).then(function (createdPage) { // Nested .then so we can remember `user`
+                return createdPage.setAuthor(user);
+            });
         })
+        .then(function (createdPage) {
+            res.redirect(createdPage.route);
+        })
+        .catch(next);
+});
+
+// GET /wiki/add
+router.get('/add', function (req, res) {
+    res.render('addpage');
+});
+
+router.get('/search/:tag', function (req, res, next) {
+
+    Page.findByTag(req.params.tag)
+        .then(function (pages) {
+            res.render('index', {
+                pages: pages
+            });
+        })
+        .catch(next);
+});
+
+// /wiki/Javascript
+router.get('/:urlTitle', function (req, res, next) {
+
+    var urlTitleOfAPage = req.params.urlTitle;
+
+    Page.findOne({
+        where: {
+            urlTitle: urlTitleOfAPage
+        }
+        /* includes runs a join and gives us .author
+         * so this is an alternative to doing page.getAuthor
+         * separately */
+        // includes: [
+        //     { model: User, as: 'author' }
+        // ]
+    })
         .then(function (page) {
-          res.redirect(page.route);
+
+            if (!page) {
+                var error = new Error('That page was not found!');
+                error.status = 404;
+                throw error;
+            }
+
+            return page.getAuthor()
+                .then(function (author) { // Nested .then so we can remember `page`
+
+                    page.author = author;
+
+                    res.render('wikipage', {
+                        page: page
+                    });
+
+                });
+
         })
         .catch(next);
 
-})
+});
 
+router.get('/:urlTitle/similar', function (req, res, next) {
 
-module.exports = {
-    router: router,
-    Page: Page,
-    User: User
-}
+    Page.findOne({
+        where: {
+            urlTitle: req.params.urlTitle
+        }
+    })
+        .then(function (page) {
 
+            if (!page) {
+                var error = new Error('That page was not found!');
+                error.status = 404;
+                throw error;
+            }
+
+            return page.findSimilar();
+
+        })
+        .then(function (similarPages) {
+            res.render('index', {
+                pages: similarPages
+            });
+        })
+        .catch(next);
+
+});
+
+// Editing functionality
+
+router.get('/:urlTitle/edit', function (req, res, next) {
+    Page.findOne({
+        where: {
+            urlTitle: req.params.urlTitle
+        }
+    })
+        .then(function (page) {
+
+            if (!page) {
+                var error = new Error('That page was not found!');
+                error.status = 404;
+                throw error;
+            }
+
+            res.render('editpage', {
+                page: page
+            });
+
+        })
+        .catch(next);
+});
+
+router.post('/:urlTitle/edit', function (req, res, next) {
+
+    Page.findOne({
+        where: {
+            urlTitle: req.params.urlTitle
+        }
+    })
+        .then(function (page) {
+
+            for (var key in req.body) {
+                page[key] = req.body[key];
+            }
+
+            return page.save();
+
+        })
+        .then(function (updatedPage) {
+            res.redirect(updatedPage.route);
+        })
+        .catch(next);
+});
+
+router.get('/:urlTitle/delete', function (req, res, next) {
+
+    Page.destroy({
+        where: {
+            urlTitle: req.params.urlTitle
+        }
+    })
+        .then(function () {
+            res.redirect('/wiki');
+        })
+        .catch(next);
+
+});

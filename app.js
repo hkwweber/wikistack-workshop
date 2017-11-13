@@ -1,34 +1,37 @@
-'use strict'
 var express = require('express');
-var app = express();
-var morgan = require('morgan');
-var router = require('./routes/index.js');
-var fs = require('fs');
-var bodyParser = require('body-parser');
 var nunjucks = require('nunjucks');
-var models = require("./models/index.js");
+var morgan = require('morgan');
+var bodyParser = require('body-parser');
 
-// point nunjucks to the directory containing templates and turn off caching; configure returns an Environment
-// instance, which we'll want to use to add Markdown support later.
-var env = nunjucks.configure('views', {noCache: true});
-// have res.render work with html files
-app.set('view engine', 'html');
-// when res.render works with html files, have it use nunjucks to do so
+var app = express();
+var wikiRouter = require('./routes/wiki');
+var usersRouter = require('./routes/users');
+
+var env = nunjucks.configure('views', { noCache: true });
 app.engine('html', nunjucks.render);
+app.set('view engine', 'html');
+
+var AutoEscapeExtension = require("nunjucks-autoescape")(nunjucks);
+env.addExtension('AutoEscapeExtension', new AutoEscapeExtension(env));
 
 app.use(morgan('dev'));
 
-app.use(bodyParser.urlencoded({ extended: true })); // for HTML form submits
-app.use(bodyParser.json()); // would be for AJAX requests
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
-app.use(express.static('./public'));
+app.use(express.static(__dirname + '/node_modules'));
+app.use(express.static(__dirname + '/public'));
 
-app.use('/', router);
+app.use('/wiki', wikiRouter);
+app.use('/users', usersRouter);
 
-models.db.sync({})
-.then(function () {
-    app.listen(3000, function (){
-        (console.log("listening on port 3000"))
-    });
-})
-.catch(console.error);
+app.get('/', function (req, res) {
+    res.redirect('/wiki');
+});
+
+app.use(function (err, req, res, next) {
+    console.error(err);
+    res.status(err.status || 500).send(err.message);
+});
+
+module.exports = app;

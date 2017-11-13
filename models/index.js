@@ -1,7 +1,6 @@
 var Sequelize = require('sequelize');
-var db = new Sequelize('postgres://localhost:5432/wikistack', {
-    logging: false
-});
+var db = new Sequelize('postgres://localhost:5432/wikistack', { logging: false });
+var marked = require('marked');
 
 var Page = db.define('page', {
     title: {
@@ -19,29 +18,75 @@ var Page = db.define('page', {
     status: {
         type: Sequelize.ENUM('open', 'closed')
     },
-    date: {
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.NOW
-    }
-},
-    {
-        getterMethods: {
-            route() {
-                return '/wiki/'+this.urlTitle;
+    tags: {
+        type: Sequelize.ARRAY(Sequelize.TEXT),
+        // page.tags = 'programming,coding,javascript'
+        set: function (value) {
+
+            var arrayOfTags;
+
+            if (typeof value === 'string') {
+                arrayOfTags = value.split(',').map(function (s) {
+                    return s.trim();
+                });
+                this.setDataValue('tags', arrayOfTags);
+            } else {
+                this.setDataValue('tags', value);
             }
+
+        }
     },
-        setterMethods:{
+    route: {
+        type: Sequelize.VIRTUAL,
+        get () {
+            return '/wiki/' + this.getDataValue('urlTitle')
+        }
+    },
+    renderedContent: {
+        type: Sequelize.VIRTUAL,
+        get () {
+            return marked(this.getDataValue('content'))
+        }
+    }
+})
 
-    }}
+/**
+ * Hooks
+ */
+Page.beforeValidate(function (page) {
+  if (page.title) {
+    page.urlTitle = page.title.replace(/\s+/g, '_').replace(/\W/g, '');
+  }
+})
 
-);
+/**
+ * Class Methods
+ */
+Page.findByTag = function (tag) {
+  return Page.findAll({
+    where: {
+      tags: {
+        $overlap: [tag]
+      }
+    }
+  });
+}
 
-
-Page.hook('beforeValidate', (page) => {
-    page.urlTitle = generateUrlTitle(page.title);
-});
-
-
+/**
+ * Instance methods
+ */
+Page.prototype.findSimilar = function () {
+  return Page.findAll({
+    where: {
+      tags: {
+        $overlap: this.tags
+      },
+      id: {
+        $ne: this.id
+      }
+    }
+  });
+}
 
 var User = db.define('user', {
     name: {
@@ -51,6 +96,7 @@ var User = db.define('user', {
     email: {
         type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
         validate: {
             isEmail: true
         }
@@ -60,18 +106,7 @@ var User = db.define('user', {
 Page.belongsTo(User, { as: 'author' });
 
 module.exports = {
-  Page: Page,
-  User: User,
-  db: db
+    Page: Page,
+    User: User,
+    db: db
 };
-
-function generateUrlTitle (title) {
-  if (title) {
-    // Removes all non-alphanumeric characters from title
-    // And make whitespace underscore
-    return title.replace(/\s+/g, '_').replace(/\W/g, '');
-  } else {
-    // Generates random 5 letter string
-    return Math.random().toString(36).substring(2, 7);
-  }
-}
