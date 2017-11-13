@@ -14,14 +14,19 @@ router.get('/add/', function(req, res, next){
 })
 
 router.get('/:urlTitle', function(req, res, next){
-    Page.findOne({
+
+    var page = Page.findOne({
         where: {
             urlTitle : req.params.urlTitle
         }
-    })
-    .then(function(foundPage){
-        console.log(foundPage);
-        res.render('wikipage', {foundPage});
+    });
+    var user = page.getAuthor();
+
+    Promise.all([page, user]).then(function(values) {
+        res.render('wikipage', {
+           foundPage: values[0],
+           author: values[1]
+        })
     })
     .catch(next);
 } )
@@ -33,7 +38,7 @@ router.post('/', function(req, res, next){
     // if does exist, add to existing wiki entries
     User.findOrCreate({
         where: {
-            name: req.body.authorName, 
+            name: req.body.authorName,
             email: req.body.authorEmail
         }
 
@@ -44,7 +49,7 @@ router.post('/', function(req, res, next){
             title: req.body.title,
             content: req.body.content
           });
-      
+
         return page.save()
         .then(function(page) {
             return page.setAuthor(user);
@@ -53,7 +58,7 @@ router.post('/', function(req, res, next){
         .then(function (page) {
           res.redirect(page.route);
         })
-        .catch(next);   
+        .catch(next);
 
 })
 
