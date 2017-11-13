@@ -3,10 +3,10 @@
 {% block content %}
   <h3>Pages</h3>
   <hr>
-  <ul class="list-unstyled">
+  <ul>
     
       {% for page in foundPages %}
-        <li><a href="#">{{page.route}}</a></li>
+        <li><a href="{{page.route}}">{{page.title}}</a></li>
       {% endfor %}
     
   </ul>

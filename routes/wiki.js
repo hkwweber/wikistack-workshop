@@ -27,16 +27,33 @@ router.get('/:urlTitle', function(req, res, next){
 } )
 
 router.post('/', function(req, res, next){
-    // res.json(req.body);
-    var page = Page.build({
-      title: req.body.title,
-      content: req.body.content
-    });
+    // first we need to get the author name from user input
+    // next, we need to see if the author already exists
+    // then, if does not exist, create new user in table
+    // if does exist, add to existing wiki entries
+    User.findOrCreate({
+        where: {
+            name: req.body.authorName, 
+            email: req.body.authorEmail
+        }
 
-    page.save().then(function(page) {
-      //res.json(page);
-      res.redirect(page.route);
-    })
+    }).then(function(values) {
+        let user = values[0];
+
+        let page = Page.build({
+            title: req.body.title,
+            content: req.body.content
+          });
+      
+        return page.save()
+        .then(function(page) {
+            return page.setAuthor(user);
+          });
+        })
+        .then(function (page) {
+          res.redirect(page.route);
+        })
+        .catch(next);   
 
 })
 

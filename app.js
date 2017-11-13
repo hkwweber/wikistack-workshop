@@ -25,7 +25,7 @@ app.use(express.static('./public'));
 
 app.use('/', router);
 
-models.db.sync({})
+models.db.sync({force: true })
 .then(function () {
     app.listen(3000, function (){
         (console.log("listening on port 3000"))
