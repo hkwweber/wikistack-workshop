@@ -4,37 +4,37 @@
   <h3>Add a Page</h3>
   <hr>
   <form method="POST" action="/wiki/">
-    
+
     <div>
-      <label for="name_field">Author Name:</label>        
+      <label for="name_field">Author Name:</label>
       <input name="author-name" type="text" id="name_field"/>
     </div>
-    
+
     <div>
         <label for="email_field">Author Email:</label>
         <input name="author-email" type="text" id="email_field"/>
     </div>
-    
+
     <div class="form-group">
       <label for="title" class="col-sm-2 control-label">Page Title</label>
       <div class="col-sm-10">
         <input name="title" type="text" class="form-control"/>
       </div>
     </div>
-    
+
     <div>
-      <label for="text_field">Text:</label>        
+      <label for="text_field">Text:</label>
       <input name="content" type="text" id="text_field"/>
     </div>
-    
+
     <div>
-      <label for="status_field">Page Status:</label>        
+      <label for="status_field">Page Status:</label>
       <input name="page-status" type="text" id="status_field"/>
     </div>
 
     <div class="col-sm-offset-2 col-sm-10">
       <button type="submit" class="btn btn-primary">submit</button>
     </div>
-  
+
   </form>
 {% endblock %}
