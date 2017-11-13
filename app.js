@@ -2,7 +2,7 @@
 var express = require('express');
 var app = express();
 var morgan = require('morgan');
-var router = require('./routes');
+var router = require('./routes/index.js');
 var fs = require('fs');
 var bodyParser = require('body-parser');
 var nunjucks = require('nunjucks');
@@ -23,7 +23,7 @@ app.use(bodyParser.json()); // would be for AJAX requests
 
 app.use(express.static('./public'));
 
-//app.use('/', router);
+app.use('/', router);
 
 models.db.sync({})
 .then(function () {
@@ -32,3 +32,4 @@ models.db.sync({})
     });
 })
 .catch(console.error);
+
