@@ -8,7 +8,7 @@ const wikiRouter = require('./wiki');
 const userRouter = require('./user');
 
 router.use('/wiki', wikiRouter.router);
-router.use('/user', userRouter);
+router.use('/users', userRouter);
 
 router.get('/', function(req, res, next){
     wikiRouter.Page.findAll({
